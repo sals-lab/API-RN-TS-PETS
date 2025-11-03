@@ -1,7 +1,9 @@
-import { getPetById } from "@/api/pets";
+import { deletePet, getPetById } from "@/api/pets";
 import { Pet } from "@/data/pets";
-import { useLocalSearchParams } from "expo-router";
+import { useQuery } from "@tanstack/react-query";
+import { router, useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
+
 import {
   Image,
   ScrollView,
@@ -21,13 +23,33 @@ export default function PetDetails() {
     setPet(pet);
   };
 
-  if (!pet) {
+  const { isPending, isError, data, error } = useQuery({
+    queryKey: ["pet", id],
+    queryFn: () => getPetById(id as string),
+  });
+
+  if (isPending) {
+    return <Text>Loading...</Text>;
+  }
+  if (isError) {
+    return <Text>Error: {error.message}</Text>;
+  }
+
+  const handleDeletePet = async () => {
+    await deletePet(id as string);
+    router.push("/");
+  };
+
+  if (!data) {
     return (
       <SafeAreaView style={styles.container} edges={["bottom"]}>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Pet not found!</Text>
           <TouchableOpacity onPress={handleGetPet}>
             <Text>Get Pet Data</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleDeletePet}>
+            <Text>Delete Pet</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -37,20 +59,20 @@ export default function PetDetails() {
   return (
     <SafeAreaView style={styles.container} edges={["bottom"]}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Image source={{ uri: pet.image }} style={styles.petImage} />
+        <Image source={{ uri: data.image }} style={styles.petImage} />
 
         <View style={styles.header}>
-          <Text style={styles.name}>{pet.name}</Text>
+          <Text style={styles.name}>{data.name}</Text>
           <View
             style={[
               styles.statusBadge,
-              pet.adopted === "Yes"
+              data.adopted === "Yes"
                 ? styles.adoptedBadge
                 : styles.availableBadge,
             ]}
           >
             <Text style={styles.statusText}>
-              {pet.adopted === "Yes" ? "✓ Adopted" : "Available"}
+              {data.adopted === "Yes" ? "✓ Adopted" : "Available"}
             </Text>
           </View>
         </View>
@@ -59,16 +81,16 @@ export default function PetDetails() {
           <Text style={styles.sectionTitle}>Details</Text>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>ID:</Text>
-            <Text style={styles.detailValue}>#{pet.id}</Text>
+            <Text style={styles.detailValue}>#{data.id}</Text>
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Type:</Text>
-            <Text style={styles.detailValue}>{pet.type}</Text>
+            <Text style={styles.detailValue}>{data.type}</Text>
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Status:</Text>
             <Text style={styles.detailValue}>
-              {pet.adopted === "Yes" ? "Adopted" : "Available for adoption"}
+              {data.adopted === "Yes" ? "Adopted" : "Available for adoption"}
             </Text>
           </View>
         </View>

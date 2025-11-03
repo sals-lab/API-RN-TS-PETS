@@ -1,7 +1,10 @@
 import { getPets } from "@/api/pets";
+
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
@@ -22,14 +25,26 @@ export default function Index() {
     router.push(`/${id}`);
   };
 
-  const handleAddPet = (newPet: Pet) => {
-    setPets([newPet, ...pets]);
+  const handleAddPet = (pet: Pet) => {
+    setPets([pet, ...pets]);
   };
 
   const handleGetPets = async () => {
     const pets = await getPets();
     setPets(pets);
   };
+
+  const { isPending, isError, data, error } = useQuery({
+    queryKey: ["allPets"],
+    queryFn: getPets,
+  });
+
+  if (isPending) {
+    return <ActivityIndicator size="large" color="#6200EE" />;
+  }
+  if (isError) {
+    return <Text style={{ color: "red" }}>Error: {error.message}</Text>;
+  }
 
   return (
     <>
@@ -55,7 +70,7 @@ export default function Index() {
               <Text style={styles.emptySubtext}>Start by adding a new pet</Text>
             </View>
           ) : (
-            pets.map((pet) => (
+            data?.map((pet: Pet) => (
               <PetCard
                 key={pet.id}
                 pet={pet}
