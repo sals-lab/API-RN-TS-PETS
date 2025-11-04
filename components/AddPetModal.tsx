@@ -1,4 +1,5 @@
-import { addPet } from "@/api/pets";
+import { addPet, newPetType } from "@/api/pets";
+import { useMutation } from "@tanstack/react-query";
 import React, { useState } from "react";
 import {
   KeyboardAvoidingView,
@@ -16,34 +17,88 @@ interface AddPetModalProps {
   visible: boolean;
   onClose: () => void;
   onAdd: (pet: Pet) => void;
+  refetch: () => void;
 }
 
 export const AddPetModal: React.FC<AddPetModalProps> = ({
   visible,
   onClose,
   onAdd,
+  refetch,
 }) => {
   const [name, setName] = useState("");
   const [type, setType] = useState("");
   const [adopted, setAdopted] = useState("");
   const [image, setImage] = useState("");
 
-  const handleAdd = async () => {
-    if (name.trim() && type.trim()) {
-      const addedPet = await addPet({
-        name: name.trim(),
-        type: type.trim() as "Dog" | "Cat",
-        adopted: adopted.trim() || ("No" as "Yes" | "No"),
-        image:
-          image.trim() ||
-          "https://images.unsplash.com/photo-1450778869180-41d0601e046e?w=400&h=400&fit=crop",
-      });
+  // const { mutate } = useMutation({
+  //   mutationKey: ["createPet"],
+  //   mutationFn: (newPet: newPetType) =>
+  //     addPet({
+  //       name: newPet.name,
+  //       image: newPet.image,
+  //       type: newPet.type,
+  //       adopted: newPet.adopted,
+  //     }),
+  //   onSuccess: (data) => {
+  //     onAdd(data);
+  //   },
+  //   onError: (error) => {
+  //     console.error(error);
+  //   },
+  //       });
+
+  // const handleAdd = () => {
+  //   if (name.trim() && type.trim()) {
+  //     mutate({
+  //       name: name.trim(),
+  //       type: type.trim(),
+  //       adopted: adopted.trim() || "No",
+  //       image:
+  //         image.trim() ||
+  //         "https://images.unsplash.com/photo-1450778869180-41d0601e046e?w=400&h=400&fit=crop",
+  //     });
+  //   }
+  // };
+
+  //     const addedPet = await addPet({
+  //       name: name.trim(),
+  //       type: type.trim() as "Dog" | "Cat",
+  //       adopted: adopted.trim() || ("No" as "Yes" | "No"),
+  //       image:
+  //         image.trim() ||
+  //         "https://images.unsplash.com/photo-1450778869180-41d0601e046e?w=400&h=400&fit=crop",
+  //     });
+  //     onAdd(addedPet);
+  //     setName("");
+  //     setType("");
+  //     setAdopted("");
+  //     setImage("");
+  //     onClose();
+  //   }
+  const { mutate } = useMutation({
+    mutationFn: (newPet: newPetType) => addPet(newPet),
+    onSuccess: (addedPet) => {
       onAdd(addedPet);
       setName("");
       setType("");
       setAdopted("");
       setImage("");
       onClose();
+      refetch();
+    },
+  });
+
+  const handleAdd = () => {
+    if (name.trim() && type.trim()) {
+      mutate({
+        name: name.trim(),
+        type: type.trim(),
+        adopted: adopted.trim() || "No",
+        image:
+          image.trim() ||
+          "https://images.unsplash.com/photo-1450778869180-41d0601e046e?w=400&h=400&fit=crop",
+      });
     }
   };
 

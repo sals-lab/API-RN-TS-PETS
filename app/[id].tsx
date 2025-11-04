@@ -1,32 +1,31 @@
 import { deletePet, getPetById } from "@/api/pets";
 import { Pet } from "@/data/pets";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
 
-import {
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function PetDetails() {
   const { id } = useLocalSearchParams();
   const [pet, setPet] = useState<Pet | null>(null);
+  const { mutate } = useMutation({
+    mutationKey: ["deletePet"],
+    mutationFn: () => deletePet(id as string),
+    onSuccess: () => {
+      router.push("/");
+    },
+  });
+  const { isPending, isError, data, error } = useQuery({
+    queryKey: ["pet", id],
+    queryFn: () => getPetById(id as string),
+  });
 
   const handleGetPet = async () => {
     const pet = await getPetById(id as string);
     setPet(pet);
   };
-
-  const { isPending, isError, data, error } = useQuery({
-    queryKey: ["pet", id],
-    queryFn: () => getPetById(id as string),
-  });
 
   if (isPending) {
     return <Text>Loading...</Text>;
@@ -35,26 +34,10 @@ export default function PetDetails() {
     return <Text>Error: {error.message}</Text>;
   }
 
-  const handleDeletePet = async () => {
-    await deletePet(id as string);
+  const handleDeletePet = () => {
+    mutate();
     router.push("/");
   };
-
-  if (!data) {
-    return (
-      <SafeAreaView style={styles.container} edges={["bottom"]}>
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Pet not found!</Text>
-          <TouchableOpacity onPress={handleGetPet}>
-            <Text>Get Pet Data</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleDeletePet}>
-            <Text>Delete Pet</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
 
   return (
     <SafeAreaView style={styles.container} edges={["bottom"]}>
